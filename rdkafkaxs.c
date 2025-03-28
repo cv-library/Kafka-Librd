@@ -147,3 +147,33 @@ rd_kafka_topic_conf_t* krd_parse_topic_config(pTHX_ HV *params, char* errstr) {
 
     return topconf;
 }
+
+int
+krd__stats_cb(rd_kafka_t *rk, char *json, size_t json_len, void *opaque)
+{
+    dSP;
+    SV **sub;
+
+    sub = hv_fetchs(opaque, "stats", 0);
+    /* This function should only be called when a 'stats' callback is
+     * defined in the callbacks argument of the krd__new XSUB, which
+     * means the value from hv_fetchs will never be null, so the
+     * following null check is just defensive programming. */
+    if (sub == NULL)
+        croak("stats callback is null");
+
+    ENTER;
+    SAVETMPS;
+
+    PUSHMARK(SP);
+    /* SUB called with a single SCALAR parameter containing the JSON */
+    XPUSHs(sv_2mortal(newSVpvn(json, json_len)));
+    PUTBACK;
+
+    call_sv(*sub, G_VOID | G_DISCARD);
+
+    FREETMPS;
+    LEAVE;
+
+    return 0;
+}

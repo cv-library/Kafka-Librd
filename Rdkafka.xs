@@ -27,9 +27,10 @@ krd_rd_kafka_version_str()
         RETVAL
 
 rdkafka_t*
-krd__new(type, params)
+krd__new(type, params, callbacks)
         int type
         HV* params
+        HV* callbacks
     PREINIT:
         rd_kafka_conf_t* conf;
         rd_kafka_t* rk;
@@ -37,6 +38,17 @@ krd__new(type, params)
     CODE:
         Newx(RETVAL, 1, rdkafka_t);
         conf = krd_parse_config(aTHX_ RETVAL, params);
+
+        /* Use opaque pointer to store HV* with values pointing to
+         * callback SUBs. The reference count needs to be incremented to
+         * prevent garbage collection when the Perl scope ends. The
+         * reference count is decremented to zero in the destructor. */
+        SvREFCNT_inc(callbacks);
+        rd_kafka_conf_set_opaque(conf, callbacks);
+        /* Register callbacks that exist */
+        if (hv_fetchs(callbacks, "stats", 0))
+            rd_kafka_conf_set_stats_cb(conf, krd__stats_cb);
+
         rk = rd_kafka_new(type, conf, errstr, 1024);
         if (rk == NULL) {
             croak("%s", errstr);
@@ -292,6 +304,7 @@ void
 krd_DESTROY(rdk)
         rdkafka_t* rdk
     CODE:
+        SvREFCNT_dec(rd_kafka_opaque(rdk->rk));
         if (rdk->thx == (IV)PERL_GET_THX) {
             Safefree(rdk);
         }

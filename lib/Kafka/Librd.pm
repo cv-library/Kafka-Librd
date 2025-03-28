@@ -49,20 +49,31 @@ This module provides perl bindings for librdkafka.
 
 =head2 new
 
-    $kafka = $class->new($type, \%config)
+    $kafka = $class->new($type, \%config, \%callbacks)
 
-Create a new instance. $type can be either C<RD_KAFKA_CONSUMER> or
-C<RD_KAFKA_PRODUCER>. Config is a hash with configuration parameters as
-described in
-L<https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md>,
+Create a new instance. C<$type> can be either C<RD_KAFKA_CONSUMER> or
+C<RD_KAFKA_PRODUCER>. C<\%config> is a hash reference with configuration
+parameters as described in
+L<https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md>,
 additionally it may include C<default_topic_config> key, with a hash containing
-default topic configuration properties.
+default topic configuration properties. C<\%callbacks> is an I<optional> hash
+reference with callbacks. Callbacks can either be a CODEREF, or the name of a
+subroutine.
+
+=head3 callbacks
+
+=head4 C<stats>
+
+Receives a single SCALAR parameter with the stats in JSON format
+L<https://github.com/confluentinc/librdkafka/blob/master/STATISTICS.md>. The
+callback is triggered from L</poll> every C<statistics.interval.ms>. Called in
+void context so should not return anything.
 
 =cut
 
 sub new {
-    my ( $class, $type, $params ) = @_;
-    return _new( $type, $params );
+    my ( $class, $type, $params, $callbacks ) = @_;
+    return _new( $type, $params, $callbacks || {} );
 }
 
 {
@@ -184,6 +195,12 @@ return the current out queue length.
     $kafka->flush($timeout_ms)
 
 wait until all outstanding produce requests, et.al, are completed.
+
+=head2 poll
+
+    $kafka->poll($timeout_ms)
+
+poll for events and trigger corresponding callbacks
 
 =head2 destroy
 
