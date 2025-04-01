@@ -7,7 +7,7 @@ build_requires:
   Test::More: '0.94'
 configure_requires:
   Alien::Base::Wrapper: '0'
-  Alien::Librdkafka: v0.9.3
+  Alien::Librdkafka: v1.0.5
   ExtUtils::MakeMaker: '6.64'
 dynamic_config: 1
 generated_by: 'ExtUtils::MakeMaker version 7.60, CPAN::Meta::Converter version 2.150010'

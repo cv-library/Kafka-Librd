@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Config;
 use ExtUtils::MakeMaker 6.64;
-use Alien::Librdkafka 0.9.3;
+use Alien::Librdkafka 1.0.5;
 use Alien::Base::Wrapper qw( Alien::Librdkafka !export );
 use File::Spec ();
 
@@ -23,7 +23,7 @@ WriteMakefile(
     },
     CONFIGURE_REQUIRES => {
         'Alien::Base::Wrapper' => '0',
-        'Alien::Librdkafka'    => '0.9.3',
+        'Alien::Librdkafka'    => '1.0.5',
         'ExtUtils::MakeMaker'  => '6.64',
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
