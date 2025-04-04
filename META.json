@@ -28,7 +28,7 @@
       "configure" : {
          "requires" : {
             "Alien::Base::Wrapper" : "0",
-            "Alien::Librdkafka" : "v1.0.5",
+            "Alien::Librdkafka" : "v1.05",
             "ExtUtils::MakeMaker" : "6.64"
          }
       },
