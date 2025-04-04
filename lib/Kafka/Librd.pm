@@ -173,6 +173,47 @@ If an error occurs during creation of the topic, C<undef> is returned. In such
 case use L</Kafka::Librd::Error::last_error> to obtain the corresponding error
 code!
 
+=head2 producev
+
+    $err = $kafka->producev(\%params)
+
+Produce a message and return an error code. On success, the error code is
+C<RD_KAFKA_RESP_ERR_NO_ERROR>. The error code can be converted to a string by
+L<Kafka::Librd::Error::to_string>.
+
+You probably only want this version if you need to send headers, otherwise use
+L<Kafka::Librd::Topic::produce> instead. The parameters you can pass are
+documented below.
+
+=head3 topic (required)
+
+The name of the topic.
+
+=head3 partition (optional)
+
+The partition number. Defaults to C<RD_KAFKA_PARTITION_UA>.
+
+=head3 msgflags (optional)
+
+The message flags.
+
+Please note that C<RD_KAFKA_MSG_F_COPY> is always set internally and
+C<RD_KAFKA_MSG_F_FREE> must I<not> be used.
+
+=head3 key (optional)
+
+The message key.
+
+=head3 value (optional)
+
+The message value. This is referred to as the payload in other places.
+
+=head3 headers (optional)
+
+The message headers as a hash reference with name-value pairs. Header names
+should be strings; header values can be any scalar. Don't use references
+because they will be automatically stringified.
+
 =head2 outq_len
 
     $len = $kafka->outq_len

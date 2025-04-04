@@ -147,3 +147,23 @@ rd_kafka_topic_conf_t* krd_parse_topic_config(pTHX_ HV *params, char* errstr) {
 
     return topconf;
 }
+
+void
+krd_add_headers_from_hv(rd_kafka_headers_t *hdrs, HV *hv) {
+    SV *sv;
+    char *key;
+    I32 klen;
+    void *val;
+    STRLEN vlen;
+
+    hv_iterinit(hv);
+    while ((sv = hv_iternextsv(hv, &key, &klen)) != NULL) {
+        if (SvOK(sv)) {
+            val = SvPVbyte(sv, vlen);
+        }
+        else {
+            val = NULL; vlen = 0;
+        }
+        rd_kafka_header_add(hdrs, key, klen, val, vlen);
+    }
+}

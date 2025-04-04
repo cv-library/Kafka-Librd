@@ -288,6 +288,74 @@ krd_flush(rdk, timeout_ms)
     CODE:
         rd_kafka_flush(rdk->rk, timeout_ms);
 
+int
+krd_producev(rdk, params)
+        rdkafka_t* rdk
+        HV* params
+    PREINIT:
+        rd_kafka_headers_t *hdrs;
+        SV **tsv, **psv, **msv, **ksv, **vsv, **hsv;
+        int msgflags, partition;
+        char *value, *topic, *key;
+        STRLEN vlen, klen;
+    CODE:
+        tsv = hv_fetchs(params, "topic", 0);
+        if (tsv == NULL || !SvOK(*tsv))
+            croak("topic must be defined");
+        topic = SvPVbyte_nolen(*tsv);
+
+        psv = hv_fetchs(params, "partition", 0);
+        if (psv == NULL)
+            partition = RD_KAFKA_PARTITION_UA;
+        else if (SvIOK(*psv))
+            partition = SvIV(*psv);
+        else
+            croak("partition must be a number");
+
+        msv = hv_fetchs(params, "msgflags", 0);
+        if (msv == NULL)
+            msgflags = 0;
+        else if (SvIOK(*msv))
+            msgflags = SvIV(*msv);
+        else
+            croak("msgflags must be a number");
+
+        ksv = hv_fetchs(params, "key", 0);
+        if (ksv != NULL && SvOK(*ksv)) {
+            key = SvPVbyte(*ksv, klen);
+        }
+        else {
+            key = NULL; klen = 0;
+        }
+
+        vsv = hv_fetchs(params, "value", 0);
+        if (vsv != NULL && SvOK(*vsv)) {
+            value = SvPVbyte(*vsv, vlen);
+        }
+        else {
+            value = NULL; vlen = 0;
+        }
+
+        hdrs = rd_kafka_headers_new(0);
+        hsv = hv_fetchs(params, "headers", 0);
+        if (hsv != NULL && SvOK(*hsv)) {
+            if (!SvROK(*hsv) || SvTYPE(SvRV(*hsv)) != SVt_PVHV)
+                croak("headers must be a hash reference");
+            krd_add_headers_from_hv(hdrs, (HV*)SvRV(*hsv));
+        }
+
+        RETVAL = rd_kafka_producev(rdk->rk,
+            RD_KAFKA_V_TOPIC(topic),
+            RD_KAFKA_V_PARTITION(partition),
+            RD_KAFKA_V_MSGFLAGS(msgflags | RD_KAFKA_MSG_F_COPY),
+            RD_KAFKA_V_KEY(key, klen),
+            RD_KAFKA_V_VALUE(value, vlen),
+            RD_KAFKA_V_HEADERS(hdrs),
+            RD_KAFKA_V_END
+        );
+    OUTPUT:
+        RETVAL
+
 void
 krd_DESTROY(rdk)
         rdkafka_t* rdk
