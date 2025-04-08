@@ -298,6 +298,7 @@ krd_producev(rdk, params)
         int msgflags, partition;
         char *value, *topic, *key;
         STRLEN vlen, klen;
+        I32 hlen;
     CODE:
         tsv = hv_fetchs(params, "topic", 0);
         if (tsv == NULL || !SvOK(*tsv))
@@ -336,12 +337,16 @@ krd_producev(rdk, params)
             value = NULL; vlen = 0;
         }
 
-        hdrs = rd_kafka_headers_new(0);
         hsv = hv_fetchs(params, "headers", 0);
         if (hsv != NULL && SvOK(*hsv)) {
             if (!SvROK(*hsv) || SvTYPE(SvRV(*hsv)) != SVt_PVHV)
                 croak("headers must be a hash reference");
+            hlen = hv_iterinit((HV*)SvRV(*hsv));
+            hdrs = rd_kafka_headers_new(hlen);
             krd_add_headers_from_hv(hdrs, (HV*)SvRV(*hsv));
+        }
+        else {
+            hdrs = rd_kafka_headers_new(0);
         }
 
         RETVAL = rd_kafka_producev(rdk->rk,
@@ -353,6 +358,9 @@ krd_producev(rdk, params)
             RD_KAFKA_V_HEADERS(hdrs),
             RD_KAFKA_V_END
         );
+
+        if (RETVAL != RD_KAFKA_RESP_ERR_NO_ERROR)
+            rd_kafka_headers_destroy(hdrs);
     OUTPUT:
         RETVAL
 
